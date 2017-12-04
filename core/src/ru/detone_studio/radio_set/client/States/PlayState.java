@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.audio.AudioDevice;
 import com.badlogic.gdx.audio.AudioRecorder;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -126,6 +127,22 @@ public class PlayState extends State {
             crl_red.draw(sb);
         }
         //font.draw(sb,"Text",15,770);
+        //Справочная информация
+
+        int fps = Gdx.graphics.getFramesPerSecond();
+        if (fps >= 45) {
+            // 45 or more FPS show up in green
+            font.setColor(0, 1, 0, 1);
+        } else if (fps >= 30) {
+            // 30 or more FPS show up in yellow
+            font.setColor(1, 1, 0, 1);
+        } else {
+            // less than 30 FPS show up in red
+            font.setColor(1, 0, 0, 1);
+        }
+        font.draw(sb, " FPS : "+  fps, 10, 790);
+        font.setColor(1, 1, 1, 1);
+
 
     }
 
