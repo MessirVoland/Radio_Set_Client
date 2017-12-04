@@ -51,11 +51,14 @@ public class PlayState extends State {
     Sprite btn_red=new Sprite(new Texture(Gdx.files.internal("btn_red.png")));
 
     Sprite crl_green=new Sprite(new Texture(Gdx.files.internal("circle_green.png")));
+    Sprite crl_yellow=new Sprite(new Texture(Gdx.files.internal("circle_yellow.png")));
     Sprite crl_red=new Sprite(new Texture(Gdx.files.internal("circle_red.png")));
     Sprite crl_blue=new Sprite(new Texture(Gdx.files.internal("circle_blue.png")));
 
     byte hand_shake_buffer[]=new byte[2];
-
+    int dynamic_port=9000;
+    String ip_adress="192.168.1.196";
+    //String ip_adress="185.132.242.124";
     static boolean btn_touched=false;
 
     public PlayState(GameStateManager gsm) {
@@ -70,7 +73,7 @@ public class PlayState extends State {
         crl_green.setPosition(406,726);
         crl_red.setPosition(406,726);
         crl_blue.setPosition(406,726);
-
+        crl_yellow.setPosition(406,726);
         //поток обмена данными
         send_msg();
 
@@ -127,7 +130,10 @@ public class PlayState extends State {
             crl_blue.draw(sb);
         }else if (hand_shake_buffer[0]==20){
             crl_green.draw(sb);
-        }else{
+        }else if (hand_shake_buffer[0]==21){
+            crl_yellow.draw(sb);
+        }
+        else{
             crl_red.draw(sb);
         }
         font.draw(sb,"Text",15,770);
@@ -171,8 +177,13 @@ public class PlayState extends State {
                         System.out.print("");
 
                         if (sync_dt>=0.8f) {
-
-                            Socket client = Gdx.net.newClientSocket(Net.Protocol.TCP, "192.168.1.196", 9999, hints);
+                            Socket client;
+                            if (dynamic_port==9000){
+                                client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, 9000, hints);
+                            }else
+                            {
+                                client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
+                            }
 
 
                             if (can_send.size >= 1) {
@@ -202,9 +213,29 @@ public class PlayState extends State {
                                 }
                             }
                             else {
+                                if (dynamic_port==9000) {
+
+                                    hand_shake_buffer[0] = 11;
+                                    client.getOutputStream().write(hand_shake_buffer);
+                                    client.getInputStream().read(hand_shake_buffer);
+                                    System.out.println("Answer: " + hand_shake_buffer[0]);
+
+                                    byte port_buffer[]=new byte[2];
+                                    client.getInputStream().read(port_buffer);
+
+                                    System.out.println("port to connect: " + port_buffer[0]);
+                                    client.dispose();
+                                    dynamic_port=port_buffer[0];
+                                    dynamic_port+=9000;
+
+                                    System.out.println("Conncet to : "+dynamic_port);
+                                    client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
+                                }
 
                                 hand_shake_buffer[0] = 10;
+
                                 client.getOutputStream().write(hand_shake_buffer);
+                                System.out.println("Port: "+dynamic_port);
 
                                 client.getInputStream().read(hand_shake_buffer);
                                 System.out.println("Nothing hand_shake_buffer[0]: "+hand_shake_buffer[0]);
