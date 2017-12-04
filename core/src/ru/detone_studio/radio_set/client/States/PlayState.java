@@ -48,6 +48,13 @@ public class PlayState extends State {
 
     Sprite btn_green=new Sprite(new Texture(Gdx.files.internal("btn_green.png")));
     Sprite btn_red=new Sprite(new Texture(Gdx.files.internal("btn_red.png")));
+
+    Sprite crl_green=new Sprite(new Texture(Gdx.files.internal("circle_green.png")));
+    Sprite crl_red=new Sprite(new Texture(Gdx.files.internal("circle_red.png")));
+    Sprite crl_blue=new Sprite(new Texture(Gdx.files.internal("circle_blue.png")));
+
+    byte hand_shake_buffer[]=new byte[2];
+
     static boolean btn_touched=false;
 
     public PlayState(GameStateManager gsm) {
@@ -58,6 +65,10 @@ public class PlayState extends State {
         //Кнопки
         btn_green.setPosition(167,167);
         btn_red.setPosition(167,167);
+
+        crl_green.setPosition(406,726);
+        crl_red.setPosition(406,726);
+        crl_blue.setPosition(406,726);
 
         //поток воспроизведения звука
         play_snd();
@@ -107,6 +118,13 @@ public class PlayState extends State {
             // font.setColor(0.0f, 1.0f, 0.0f, 1.0f);
             btn_green.draw(sb);
         }
+        if (hand_shake_buffer[0]==25){
+            crl_blue.draw(sb);
+        }else if (hand_shake_buffer[0]==20){
+            crl_green.draw(sb);
+        }else{
+            crl_red.draw(sb);
+        }
         //font.draw(sb,"Text",15,770);
 
     }
@@ -124,7 +142,7 @@ public class PlayState extends State {
             public void run () {
                 SocketHints hints = new SocketHints();
                 hints.socketTimeout = 5000;
-                byte hand_shake_buffer[]=new byte[2];
+
                 byte buffer[] = new byte[392];
                 while (true) {
                     try {
