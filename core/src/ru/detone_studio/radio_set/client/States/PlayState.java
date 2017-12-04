@@ -71,14 +71,14 @@ public class PlayState extends State {
         crl_red.setPosition(406,726);
         crl_blue.setPosition(406,726);
 
+        //поток обмена данными
+        send_msg();
+
         //поток воспроизведения звука
         play_snd();
 
         //поток сохранения звука
         save_snd();
-
-        //поток обмена данными
-        send_msg();
 
     }
 
@@ -121,6 +121,8 @@ public class PlayState extends State {
             // font.setColor(0.0f, 1.0f, 0.0f, 1.0f);
             btn_green.draw(sb);
         }
+        // int kk=hand_shake_buffer[0];
+        //font.draw(sb, " BUFFER  : " , 10, 770);
         if (hand_shake_buffer[0]==25){
             crl_blue.draw(sb);
         }else if (hand_shake_buffer[0]==20){
@@ -128,7 +130,7 @@ public class PlayState extends State {
         }else{
             crl_red.draw(sb);
         }
-        //font.draw(sb,"Text",15,770);
+        font.draw(sb,"Text",15,770);
         //Справочная информация
 
         int fps = Gdx.graphics.getFramesPerSecond();
@@ -161,11 +163,15 @@ public class PlayState extends State {
             public void run () {
                 SocketHints hints = new SocketHints();
                 hints.socketTimeout = 5000;
-
+                //byte hand_shake_buffer[]=new byte[2];
                 byte buffer[] = new byte[392];
                 while (true) {
                     try {
+                        //Важная строка для синхронизации
+                        System.out.print("");
+
                         if (sync_dt>=0.8f) {
+
                             Socket client = Gdx.net.newClientSocket(Net.Protocol.TCP, "192.168.1.196", 9999, hints);
 
 
