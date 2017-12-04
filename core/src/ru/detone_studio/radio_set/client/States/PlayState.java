@@ -88,9 +88,11 @@ public class PlayState extends State {
         touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(touchPos);
         if (Gdx.input.isTouched()) {
-            touched = true;
-            btn_touched=true;
-            current_dt = 0;
+            if ((btn_green.getBoundingRectangle().contains(touchPos.x, touchPos.y)) | (btn_red.getBoundingRectangle().contains(touchPos.x, touchPos.y))) {
+                touched = true;
+                btn_touched = true;
+                current_dt = 0;
+            }
         }
 
 
