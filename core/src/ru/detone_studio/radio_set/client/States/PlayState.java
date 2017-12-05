@@ -109,7 +109,7 @@ public class PlayState extends State {
         about = "Wait for input ServerAdress";
 
 
-        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.0.2", "");
+        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.1.196", "");
 
         //поток сохранения шумов(для тестов)
         //save_noice();
@@ -209,7 +209,7 @@ public class PlayState extends State {
                 SocketHints hints = new SocketHints();
 
                 hints.socketTimeout = 5000;
-                hints.trafficClass = 0x08;
+                //hints.trafficClass = 0x08;
                 //hints.receiveBufferSize=2048;
                 //hints.sendBufferSize=2048;
                 //byte hand_shake_buffer[]=new byte[2];
@@ -229,7 +229,7 @@ public class PlayState extends State {
                             } else {
                                 about = "Check aviable: " + ip_adress + ":" + dynamic_port;
 
-                                int buffer_size = 4096 / 4;
+                                int buffer_size = 4096 ;
                                 hints.receiveBufferSize = buffer_size;
                                 hints.sendBufferSize = buffer_size;
 
@@ -304,7 +304,6 @@ public class PlayState extends State {
 
                                     for (local_i = 1; local_i <= 225; local_i++) {
                                         client.getInputStream().read(buffer);
-
                                         for (int j = 1; j <= 98; j++) {
 
                                             buffer2.put(buffer[j * 2 - 2]);
@@ -312,14 +311,14 @@ public class PlayState extends State {
                                             data_rcv.get(data_rcv.size - 1)[sync_i] = buffer2.getShort(0);
                                             buffer2.clear();
 
-                                            if (sync_i >= (22050)) {
-                                                System.out.println("ublocked");
-                                                blocked.add(false);
-                                            }
                                             sync_i++;
                                         }
                                         //buffer2.putShort(data.get(0)[i]);
                                     }
+
+                                    System.out.println("ublocked");
+                                    blocked.add(false);
+
 
                                 }
                                 //---------------------------------------------------------------------------------->
