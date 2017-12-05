@@ -185,12 +185,13 @@ public class PlayState extends State {
         new Thread(new Runnable() {
             @Override
             public void run () {
+                System.out.println("Start send/recv Tread");
                 SocketHints hints = new SocketHints();
 
                 hints.socketTimeout = 5000;
                 hints.trafficClass=0x08;
-                hints.receiveBufferSize=400;
-                hints.sendBufferSize=400;
+                //hints.receiveBufferSize=2048;
+                //hints.sendBufferSize=2048;
                 //byte hand_shake_buffer[]=new byte[2];
                 byte buffer[] = new byte[392];
                 while (true) {
@@ -201,6 +202,8 @@ public class PlayState extends State {
                         if (sync_dt>=0.8f) {
                             Socket client;
                             if (dynamic_port==9000){
+                                hand_shake_buffer[0]=21;
+                                Thread.sleep(2000);
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, 9000, hints);
                             }else
                             {
@@ -305,10 +308,18 @@ public class PlayState extends State {
                             client.dispose();
                         }
                         //wait(900);
+
                     }
                     catch (Exception e)
                     {
-                        Gdx.app.log("PingPongSocketExample", "an error occured", e);
+
+                        hand_shake_buffer[0]=0;
+                        Gdx.app.log("PingPongSocketExample", "Error Transmit", e);
+                        try{
+                            Thread.sleep(2000);
+                        }catch (Exception ignore){
+
+                        }
                     }
 
                 }
@@ -370,29 +381,39 @@ public class PlayState extends State {
 
     //Функция генерации шумов
     public void save_noice(){
-        System.out.println("save_noice");
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
+        System.out.println("Start noice fuction");
+        try {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("Start noice Runnable");
+                    while (true) {
 
-                    if (touched) {
-                        touched = false;
-                        can_send.add(false);
-                        System.out.println("Start Generating Noice");
-                        data.add(new short[samples * 1]);
-                        for (int i = 1; i < 22050; i++) {
-                            data.get(data.size - 1)[i] = (short) (random.nextInt(64000) - 32000);
-                            //if (i>=44099){
-                            //   System.out.println("unblock");
-                            //    blocked.add(false);
-                            // }
+                        //Важная строка для синхронизации
+                        System.out.print("");
+
+                        if (touched) {
+                            touched = false;
+                            can_send.add(false);
+                            System.out.println("Start Generating Noice");
+                            data.add(new short[samples * 1]);
+                            for (int i = 1; i < 22050; i++) {
+                                data.get(data.size - 1)[i] = (short) (random.nextInt(64000) - 32000);
+                                //if (i>=44099){
+                                //   System.out.println("unblock");
+                                //    blocked.add(false);
+                                // }
+                            }
+                            can_send.set(can_send.size - 1, true);
                         }
-                        can_send.set(can_send.size - 1, true);
+
+
                     }
                 }
-            }
-        });
+            }).start();
+        }catch (Exception e){
+            Gdx.app.log("Radio_set_client", "Noice fuction Error", e);
+        }
     }
 
 
