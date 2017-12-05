@@ -14,26 +14,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.net.SocketHints;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-
-import java.awt.event.TextListener;
-import java.net.ConnectException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.file.DirectoryNotEmptyException;
-import java.util.Enumeration;
-import java.util.StringTokenizer;
 
 import ru.detone_studio.radio_set.client.GameStateManager;
-import sun.rmi.runtime.Log;
 
 import static com.badlogic.gdx.math.MathUtils.random;
 
@@ -127,7 +112,7 @@ public class PlayState extends State {
         Gdx.input.getTextInput(listener, "Enter server adress", "192.168.0.2", "");
 
         //поток сохранения шумов(для тестов)
-        save_noice();
+        //save_noice();
 
         //поток обмена данными
         //send_msg();
@@ -137,7 +122,7 @@ public class PlayState extends State {
         play_snd();
 
         //поток сохранения звука
-        //save_snd();
+        save_snd();
 
 
     }
@@ -469,5 +454,5 @@ public class PlayState extends State {
         }
     }
 
-    
+
 }
