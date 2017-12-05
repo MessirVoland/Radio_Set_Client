@@ -195,7 +195,7 @@ public class PlayState extends State {
                 //hints.receiveBufferSize=2048;
                 //hints.sendBufferSize=2048;
                 //byte hand_shake_buffer[]=new byte[2];
-                byte buffer[] = new byte[392];
+                byte buffer[] = new byte[196];
                 while (true) {
                     try {
                         //Важная строка для синхронизации
@@ -211,9 +211,10 @@ public class PlayState extends State {
                             }else
                             {
                                 about="Check aviable: "+ ip_adress+":"+dynamic_port;
-                                //int buffer_size=4096*10000;
-                                //hints.receiveBufferSize=buffer_size;
-                                //hints.sendBufferSize=buffer_size;
+
+                                int buffer_size=4096/4;
+                                hints.receiveBufferSize=buffer_size;
+                                hints.sendBufferSize=buffer_size;
 
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
                             }
