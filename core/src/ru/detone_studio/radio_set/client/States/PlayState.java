@@ -1,6 +1,7 @@
 package ru.detone_studio.radio_set.client.States;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Net;
 import com.badlogic.gdx.audio.AudioDevice;
 import com.badlogic.gdx.audio.AudioRecorder;
@@ -13,11 +14,26 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.net.SocketHints;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
+import java.awt.event.TextListener;
+import java.net.ConnectException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.file.DirectoryNotEmptyException;
+import java.util.Enumeration;
+import java.util.StringTokenizer;
 
 import ru.detone_studio.radio_set.client.GameStateManager;
+import sun.rmi.runtime.Log;
 
 import static com.badlogic.gdx.math.MathUtils.random;
 
@@ -44,6 +60,7 @@ public class PlayState extends State {
     //Исп для отслеживания рамзерности массивов
     int local_i;
     int sync_i, sync_j;
+
     //short[] data = new short[samples*1];
 
 
@@ -56,23 +73,25 @@ public class PlayState extends State {
     float current_dt = 0.0f;
     float sync_dt = 0.0f;
 
-    Sprite btn_green=new Sprite(new Texture(Gdx.files.internal("btn_green.png")));
-    Sprite btn_red=new Sprite(new Texture(Gdx.files.internal("btn_red.png")));
+    Sprite btn_green = new Sprite(new Texture(Gdx.files.internal("btn_green.png")));
+    Sprite btn_red = new Sprite(new Texture(Gdx.files.internal("btn_red.png")));
 
-    Sprite crl_green=new Sprite(new Texture(Gdx.files.internal("circle_green.png")));
-    Sprite crl_yellow=new Sprite(new Texture(Gdx.files.internal("circle_yellow.png")));
-    Sprite crl_red=new Sprite(new Texture(Gdx.files.internal("circle_red.png")));
-    Sprite crl_blue=new Sprite(new Texture(Gdx.files.internal("circle_blue.png")));
+    Sprite crl_green = new Sprite(new Texture(Gdx.files.internal("circle_green.png")));
+    Sprite crl_yellow = new Sprite(new Texture(Gdx.files.internal("circle_yellow.png")));
+    Sprite crl_red = new Sprite(new Texture(Gdx.files.internal("circle_red.png")));
+    Sprite crl_blue = new Sprite(new Texture(Gdx.files.internal("circle_blue.png")));
 
     //Буффер рукопожатия
-    byte hand_shake_buffer[]=new byte[2];
+    byte hand_shake_buffer[] = new byte[2];
     //Порт авторизации и ИП
-    int dynamic_port=9000;
-    String ip_adress="192.168.0.2";
+    int dynamic_port = 9000;
+    String ip_adress = "192.168.1.2";
 
-    String about="";
+
+    String about = "";
     //String ip_adress="185.132.242.124";
-    static boolean btn_touched=false;
+    static boolean btn_touched = false;
+
 
     public PlayState(GameStateManager gsm) {
         super(gsm);
@@ -80,19 +99,38 @@ public class PlayState extends State {
         camera.setToOrtho(false, 480, 800);
 
         //Кнопки
-        btn_green.setPosition(167,167);
-        btn_red.setPosition(167,167);
+        btn_green.setPosition(167, 167);
+        btn_red.setPosition(167, 167);
 
-        crl_green.setPosition(406,726);
-        crl_red.setPosition(406,726);
-        crl_blue.setPosition(406,726);
-        crl_yellow.setPosition(406,726);
+        crl_green.setPosition(406, 726);
+        crl_red.setPosition(406, 726);
+        crl_blue.setPosition(406, 726);
+        crl_yellow.setPosition(406, 726);
+
+        Input.TextInputListener listener = new Input.TextInputListener() {
+            @Override
+            public void input(String text) {
+                ip_adress = text;
+                //поток обмена данными
+                send_msg();
+            }
+
+            @Override
+            public void canceled() {
+                //поток обмена данными
+                send_msg();
+            }
+        };
+        about = "Wait for input ServerAdress";
+
+
+        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.0.2", "");
+
         //поток сохранения шумов(для тестов)
         save_noice();
 
         //поток обмена данными
-        send_msg();
-
+        //send_msg();
 
 
         //поток воспроизведения звука
@@ -100,7 +138,6 @@ public class PlayState extends State {
 
         //поток сохранения звука
         //save_snd();
-
 
 
     }
@@ -124,9 +161,9 @@ public class PlayState extends State {
     @Override
     public void update(float dt) {
         current_dt += dt;
-        sync_dt+=dt;
+        sync_dt += dt;
         if (current_dt > 1.0f) {
-            btn_touched=false;
+            btn_touched = false;
             handleInput();
         }
     }
@@ -138,25 +175,22 @@ public class PlayState extends State {
             // font.setColor(1.0f, 0.0f, 0.0f, 0.5f);
             btn_red.draw(sb);
 
-        }
-        else
-        {
+        } else {
             // font.setColor(0.0f, 1.0f, 0.0f, 1.0f);
             btn_green.draw(sb);
         }
         // int kk=hand_shake_buffer[0];
         //font.draw(sb, " BUFFER  : " , 10, 770);
-        if (hand_shake_buffer[0]==25){
+        if (hand_shake_buffer[0] == 25) {
             crl_blue.draw(sb);
-        }else if (hand_shake_buffer[0]==20){
+        } else if (hand_shake_buffer[0] == 20) {
             crl_green.draw(sb);
-        }else if (hand_shake_buffer[0]==21){
+        } else if (hand_shake_buffer[0] == 21) {
             crl_yellow.draw(sb);
-        }
-        else{
+        } else {
             crl_red.draw(sb);
         }
-        font.draw(sb,about,15,770);
+        font.draw(sb, about, 15, 770);
         //Справочная информация
 
         int fps = Gdx.graphics.getFramesPerSecond();
@@ -170,7 +204,7 @@ public class PlayState extends State {
             // less than 30 FPS show up in red
             font.setColor(1, 0, 0, 1);
         }
-        font.draw(sb, " FPS : "+  fps, 10, 790);
+        font.draw(sb, " FPS : " + fps, 10, 790);
         font.setColor(1, 1, 1, 1);
 
 
@@ -182,16 +216,15 @@ public class PlayState extends State {
     }
 
 
-
-    public void send_msg(){
+    public void send_msg() {
         new Thread(new Runnable() {
             @Override
-            public void run () {
+            public void run() {
                 System.out.println("Start send/recv Tread");
                 SocketHints hints = new SocketHints();
 
                 hints.socketTimeout = 5000;
-                hints.trafficClass=0x08;
+                hints.trafficClass = 0x08;
                 //hints.receiveBufferSize=2048;
                 //hints.sendBufferSize=2048;
                 //byte hand_shake_buffer[]=new byte[2];
@@ -201,20 +234,19 @@ public class PlayState extends State {
                         //Важная строка для синхронизации
                         System.out.print("");
 
-                        if (sync_dt>=0.8f) {
+                        if (sync_dt >= 0.8f) {
                             Socket client;
-                            if (dynamic_port==9000){
-                                hand_shake_buffer[0]=21;
-                                about="Try to connect: "+ ip_adress+":"+dynamic_port;
+                            if (dynamic_port == 9000) {
+                                hand_shake_buffer[0] = 21;
+                                about = "Try to connect: " + ip_adress + ":" + dynamic_port;
                                 Thread.sleep(2000);
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, 9000, hints);
-                            }else
-                            {
-                                about="Check aviable: "+ ip_adress+":"+dynamic_port;
+                            } else {
+                                about = "Check aviable: " + ip_adress + ":" + dynamic_port;
 
-                                int buffer_size=4096/4;
-                                hints.receiveBufferSize=buffer_size;
-                                hints.sendBufferSize=buffer_size;
+                                int buffer_size = 4096 / 4;
+                                hints.receiveBufferSize = buffer_size;
+                                hints.sendBufferSize = buffer_size;
 
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
                             }
@@ -224,7 +256,7 @@ public class PlayState extends State {
                             if (can_send.size >= 1) {
                                 if (can_send.get(0)) {
                                     //handShake
-                                    about="Send data to: "+ ip_adress+":"+dynamic_port;
+                                    about = "Send data to: " + ip_adress + ":" + dynamic_port;
                                     hand_shake_buffer[0] = 15;
                                     client.getOutputStream().write(hand_shake_buffer);
                                     client.getInputStream().read(hand_shake_buffer);
@@ -248,37 +280,37 @@ public class PlayState extends State {
                             }
                             //------------------------------------------------------------------------------------->
                             else {
-                                if (dynamic_port==9000) {
+                                if (dynamic_port == 9000) {
 
                                     hand_shake_buffer[0] = 11;
                                     client.getOutputStream().write(hand_shake_buffer);
                                     client.getInputStream().read(hand_shake_buffer);
                                     System.out.println("Answer: " + hand_shake_buffer[0]);
 
-                                    byte port_buffer[]=new byte[2];
+                                    byte port_buffer[] = new byte[2];
                                     client.getInputStream().read(port_buffer);
 
                                     System.out.println("port to connect: " + port_buffer[0]);
                                     client.dispose();
-                                    dynamic_port=port_buffer[0];
-                                    dynamic_port+=9000;
+                                    dynamic_port = port_buffer[0];
+                                    dynamic_port += 9000;
 
-                                    System.out.println("Conncet to : "+dynamic_port);
+                                    System.out.println("Conncet to : " + dynamic_port);
                                     client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
                                 }
 
                                 hand_shake_buffer[0] = 10;
 
                                 client.getOutputStream().write(hand_shake_buffer);
-                                System.out.println("Port: "+dynamic_port);
+                                System.out.println("Port: " + dynamic_port);
 
                                 client.getInputStream().read(hand_shake_buffer);
-                                System.out.println("Nothing hand_shake_buffer[0]: "+hand_shake_buffer[0]);
+                                System.out.println("Nothing hand_shake_buffer[0]: " + hand_shake_buffer[0]);
 
                                 //Получение данных с сервера-------------------------------------------------------->
-                                if (hand_shake_buffer[0]==25){
+                                if (hand_shake_buffer[0] == 25) {
                                     //Статус сообщение
-                                    about="Receive data from: "+ ip_adress+":"+dynamic_port;
+                                    about = "Receive data from: " + ip_adress + ":" + dynamic_port;
 
 
                                     sync_i = 0;
@@ -310,22 +342,35 @@ public class PlayState extends State {
 
                             }
 
-                            sync_dt=0;
+                            sync_dt = 0;
                             client.dispose();
                         }
                         //wait(900);
 
-                    }
-                    catch (Exception e)
-                    {
+                    } catch (GdxRuntimeException err) {
+                        String error = err.getMessage();
+                        if (error.contains("Error making a socket connection")) {
+                            //System.out.println(error);
+                            try {
+                                about = "Server offline or Blocked ip: " + ip_adress + ":" + dynamic_port;
+                                hand_shake_buffer[0] = 0;
+                                Thread.sleep(4000);
 
-                        hand_shake_buffer[0]=0;
+                            } catch (Exception ignore) {
+
+                            }
+                        }
+                        //Gdx.app.log("PingPongSocketExample", "Connect Exception", err);
+
+                    } catch (Exception e) {
+
+                        hand_shake_buffer[0] = 0;
                         Gdx.app.log("PingPongSocketExample", "Error Transmit", e);
-                        try{
-                            about="Connection error: "+ ip_adress+":"+dynamic_port;
+                        try {
+                            about = "Connection error: " + ip_adress + ":" + dynamic_port;
                             Thread.sleep(2000);
 
-                        }catch (Exception ignore){
+                        } catch (Exception ignore) {
 
                         }
                     }
@@ -337,7 +382,7 @@ public class PlayState extends State {
     }
 
 
-    public void play_snd(){
+    public void play_snd() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -346,18 +391,17 @@ public class PlayState extends State {
                         if (blocked != null) {
                             if (blocked.size > 0) {
                                 if (!blocked.get(0)) {
-                                    blocked.set(0,true);
+                                    blocked.set(0, true);
                                     player.writeSamples(data_rcv.get(0), 0, 22050);
                                     data_rcv.removeIndex(0);
                                     blocked.removeIndex(0);
-                                } else
-                                {
+                                } else {
                                     System.out.println("Data blocked");
                                 }
                             }
 
                         }
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         Gdx.app.log("PingPongSocketExample", "an error occured", e);
                     }
                     System.out.print("");
@@ -368,7 +412,7 @@ public class PlayState extends State {
 
     }
 
-    public void save_snd(){
+    public void save_snd() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -378,7 +422,7 @@ public class PlayState extends State {
                         can_send.add(false);
                         data.add(new short[samples * 1]);
                         recorder.read(data.get(data.size - 1), 0, data.get(data.size - 1).length);
-                        can_send.set(can_send.size-1,true);
+                        can_send.set(can_send.size - 1, true);
                         // blocked.set(blocked.size - 1, false);
                         //send_msg();
                     }
@@ -388,7 +432,7 @@ public class PlayState extends State {
     }
 
     //Функция генерации шумов
-    public void save_noice(){
+    public void save_noice() {
         System.out.println("Start noice fuction");
         try {
             new Thread(new Runnable() {
@@ -420,10 +464,10 @@ public class PlayState extends State {
                     }
                 }
             }).start();
-        }catch (Exception e){
+        } catch (Exception e) {
             Gdx.app.log("Radio_set_client", "Noice fuction Error", e);
         }
     }
 
-
+    
 }
