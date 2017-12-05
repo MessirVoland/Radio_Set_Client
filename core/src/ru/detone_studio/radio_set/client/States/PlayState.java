@@ -19,6 +19,8 @@ import java.nio.ByteBuffer;
 
 import ru.detone_studio.radio_set.client.GameStateManager;
 
+import static com.badlogic.gdx.math.MathUtils.random;
+
 /**
  * Основной модуль клиента
  * Created by Voland on 29.10.2017.
@@ -66,7 +68,7 @@ public class PlayState extends State {
     byte hand_shake_buffer[]=new byte[2];
     //Порт авторизации и ИП
     int dynamic_port=9000;
-    String ip_adress="192.168.1.196";
+    String ip_adress="192.168.0.2";
     //String ip_adress="185.132.242.124";
     static boolean btn_touched=false;
 
@@ -83,14 +85,21 @@ public class PlayState extends State {
         crl_red.setPosition(406,726);
         crl_blue.setPosition(406,726);
         crl_yellow.setPosition(406,726);
+        //поток сохранения шумов(для тестов)
+        save_noice();
+
         //поток обмена данными
         send_msg();
+
+
 
         //поток воспроизведения звука
         play_snd();
 
         //поток сохранения звука
-        save_snd();
+        //save_snd();
+
+
 
     }
 
@@ -357,6 +366,33 @@ public class PlayState extends State {
                 }
             }
         }).start();
+    }
+
+    //Функция генерации шумов
+    public void save_noice(){
+        System.out.println("save_noice");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+
+                    if (touched) {
+                        touched = false;
+                        can_send.add(false);
+                        System.out.println("Start Generating Noice");
+                        data.add(new short[samples * 1]);
+                        for (int i = 1; i < 22050; i++) {
+                            data.get(data.size - 1)[i] = (short) (random.nextInt(64000) - 32000);
+                            //if (i>=44099){
+                            //   System.out.println("unblock");
+                            //    blocked.add(false);
+                            // }
+                        }
+                        can_send.set(can_send.size - 1, true);
+                    }
+                }
+            }
+        });
     }
 
 
