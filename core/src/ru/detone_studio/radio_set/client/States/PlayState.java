@@ -69,6 +69,8 @@ public class PlayState extends State {
     //Порт авторизации и ИП
     int dynamic_port=9000;
     String ip_adress="192.168.0.2";
+
+    String about="";
     //String ip_adress="185.132.242.124";
     static boolean btn_touched=false;
 
@@ -154,7 +156,7 @@ public class PlayState extends State {
         else{
             crl_red.draw(sb);
         }
-        font.draw(sb,"Text",15,770);
+        font.draw(sb,about,15,770);
         //Справочная информация
 
         int fps = Gdx.graphics.getFramesPerSecond();
@@ -203,28 +205,34 @@ public class PlayState extends State {
                             Socket client;
                             if (dynamic_port==9000){
                                 hand_shake_buffer[0]=21;
+                                about="Try to connect: "+ ip_adress+":"+dynamic_port;
                                 Thread.sleep(2000);
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, 9000, hints);
                             }else
                             {
+                                about="Check aviable: "+ ip_adress+":"+dynamic_port;
+                                //int buffer_size=4096*10000;
+                                //hints.receiveBufferSize=buffer_size;
+                                //hints.sendBufferSize=buffer_size;
+
                                 client = Gdx.net.newClientSocket(Net.Protocol.TCP, ip_adress, dynamic_port, hints);
                             }
 
 
+                            //Отправка на сервер------------------------------------------------------------------>
                             if (can_send.size >= 1) {
                                 if (can_send.get(0)) {
                                     //handShake
+                                    about="Send data to: "+ ip_adress+":"+dynamic_port;
                                     hand_shake_buffer[0] = 15;
                                     client.getOutputStream().write(hand_shake_buffer);
-
                                     client.getInputStream().read(hand_shake_buffer);
 
-
                                     ByteBuffer buffer2 = ByteBuffer.allocate(2);
-
                                     sync_j = 0;
-                                    for (int i = 1; i <= (225); i++) {
-                                        for (int j = 1; j < (99); j++) {
+
+                                    for (int i = 1; i <= 225; i++) {
+                                        for (int j = 1; j <= 98; j++) {
                                             buffer2.putShort(data.get(0)[sync_j]);
                                             buffer[j * 2 - 2] = buffer2.get(0);
                                             buffer[j * 2 - 1] = buffer2.get(1);
@@ -237,6 +245,7 @@ public class PlayState extends State {
                                     can_send.removeIndex(0);
                                 }
                             }
+                            //------------------------------------------------------------------------------------->
                             else {
                                 if (dynamic_port==9000) {
 
@@ -264,35 +273,29 @@ public class PlayState extends State {
 
                                 client.getInputStream().read(hand_shake_buffer);
                                 System.out.println("Nothing hand_shake_buffer[0]: "+hand_shake_buffer[0]);
+
+                                //Получение данных с сервера-------------------------------------------------------->
                                 if (hand_shake_buffer[0]==25){
+                                    //Статус сообщение
+                                    about="Receive data from: "+ ip_adress+":"+dynamic_port;
+
 
                                     sync_i = 0;
-                                    data_rcv.add(new short[samples * 1]);
-                                    for (local_i = 1; local_i <= (225); local_i++) {
-                                        client.getInputStream().read(buffer);
-                                        //System.out.println("i "+local_i);
-                                        //buffer2.order(ByteOrder.LITTLE_ENDIAN);
-                                        for (int j = 1; j < (99); j++) {
-                                            //byte buffer[] = new byte[392];
-                                            //System.out.println("buffer");
-                                            ByteBuffer buffer2 = ByteBuffer.allocate(2);
-                                            //System.out.println("buffer2");
+                                    data_rcv.add(new short[samples]);
+                                    ByteBuffer buffer2 = ByteBuffer.allocate(2);
 
-                                            System.out.println("data_rcv");
+                                    for (local_i = 1; local_i <= 225; local_i++) {
+                                        client.getInputStream().read(buffer);
+
+                                        for (int j = 1; j <= 98; j++) {
 
                                             buffer2.put(buffer[j * 2 - 2]);
                                             buffer2.put(buffer[j * 2 - 1]);
-                                            // System.out.println("buffer2 in "+buffer2);
                                             data_rcv.get(data_rcv.size - 1)[sync_i] = buffer2.getShort(0);
                                             buffer2.clear();
 
-                                            if (local_i * j >= (22049)) {
+                                            if (sync_i >= (22050)) {
                                                 System.out.println("ublocked");
-                                                //System.out.println("buffer.rcv 0 " + data_rcv.get(0)[0]);
-                                                //System.out.println("buffer.rcv 1 " + data_rcv.get(0)[1]);
-                                                //System.out.println("buffer.rcv 2 " + data_rcv.get(0)[2]);
-                                                //System.out.println("buffer.rcv 3 " + data_rcv.get(0)[3]);
-                                                //System.out.println("buffer.rcv 4 " + data_rcv.get(0)[4]);
                                                 blocked.add(false);
                                             }
                                             sync_i++;
@@ -301,6 +304,8 @@ public class PlayState extends State {
                                     }
 
                                 }
+                                //---------------------------------------------------------------------------------->
+
 
                             }
 
@@ -316,7 +321,9 @@ public class PlayState extends State {
                         hand_shake_buffer[0]=0;
                         Gdx.app.log("PingPongSocketExample", "Error Transmit", e);
                         try{
+                            about="Connection error: "+ ip_adress+":"+dynamic_port;
                             Thread.sleep(2000);
+
                         }catch (Exception ignore){
 
                         }
@@ -405,6 +412,7 @@ public class PlayState extends State {
                                 // }
                             }
                             can_send.set(can_send.size - 1, true);
+                            System.out.println("End Generating Noice");
                         }
 
 
