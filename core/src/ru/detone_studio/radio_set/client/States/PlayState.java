@@ -20,28 +20,35 @@ import java.nio.ByteBuffer;
 import ru.detone_studio.radio_set.client.GameStateManager;
 
 /**
+ * Основной модуль клиента
  * Created by Voland on 29.10.2017.
  */
 
 public class PlayState extends State {
+    //хз что это
     Texture img;
+    //камера
     private OrthographicCamera camera;
 
-    static final int samples = 22050;
-    static boolean isMono = true;
-    static final Array<short[]> data = new Array<short[]>();
-    static final Array<short[]> data_rcv = new Array<short[]>();
-    static final Array<Boolean> blocked = new Array<Boolean>();
-    static final Array<Boolean> can_send = new Array<Boolean>();
+    static final int samples = 22050; //размер дискретки звука
+    static boolean isMono = true; //моно или стерео
+    static final Array<short[]> data = new Array<short[]>(); // массив данных для отправки
+    static final Array<short[]> data_rcv = new Array<short[]>(); // массив данны для приема
+    static final Array<Boolean> blocked = new Array<Boolean>(); // список блокировок передачи
+    static final Array<Boolean> can_send = new Array<Boolean>(); //список блокировок записи
 
     private BitmapFont font = new BitmapFont();
+
+    //Исп для отслеживания рамзерности массивов
     int local_i;
     int sync_i, sync_j;
     //short[] data = new short[samples*1];
 
 
+    //запись и воспроизведение
     static final AudioRecorder recorder = Gdx.audio.newAudioRecorder(samples, isMono);
     static final AudioDevice player = Gdx.audio.newAudioDevice(22050, isMono);
+
 
     static boolean touched = false;
     float current_dt = 0.0f;
@@ -55,7 +62,9 @@ public class PlayState extends State {
     Sprite crl_red=new Sprite(new Texture(Gdx.files.internal("circle_red.png")));
     Sprite crl_blue=new Sprite(new Texture(Gdx.files.internal("circle_blue.png")));
 
+    //Буффер рукопожатия
     byte hand_shake_buffer[]=new byte[2];
+    //Порт авторизации и ИП
     int dynamic_port=9000;
     String ip_adress="192.168.1.196";
     //String ip_adress="185.132.242.124";
@@ -168,7 +177,11 @@ public class PlayState extends State {
             @Override
             public void run () {
                 SocketHints hints = new SocketHints();
+
                 hints.socketTimeout = 5000;
+                hints.trafficClass=0x08;
+                hints.receiveBufferSize=400;
+                hints.sendBufferSize=400;
                 //byte hand_shake_buffer[]=new byte[2];
                 byte buffer[] = new byte[392];
                 while (true) {
