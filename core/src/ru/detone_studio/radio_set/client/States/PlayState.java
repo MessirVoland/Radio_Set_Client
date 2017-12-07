@@ -68,6 +68,11 @@ public class PlayState extends State {
 
     //Буффер рукопожатия
     byte hand_shake_buffer[] = new byte[2];
+
+    //Буффер отправки
+    int size_of_system_buffer=4000;
+    byte system_buffer[]=new byte[size_of_system_buffer];
+
     //Порт авторизации и ИП
     int dynamic_port = 9000;
     String ip_adress = "192.168.1.2";
