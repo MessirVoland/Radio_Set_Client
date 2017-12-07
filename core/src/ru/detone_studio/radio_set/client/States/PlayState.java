@@ -72,7 +72,7 @@ public class PlayState extends State {
     byte hand_shake_buffer[] = new byte[2];
 
     //Буффер отправки
-    int size_of_system_buffer=4096*11;
+    int size_of_system_buffer=4096*2;
     byte system_buffer[]=new byte[size_of_system_buffer];
 
     //Порт авторизации и ИП
@@ -116,10 +116,10 @@ public class PlayState extends State {
         about = "Wait for input ServerAdress";
 
 
-        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.0.2", "");
+        Gdx.input.getTextInput(listener, "Enter server adress", "185.132.242.124", "");
 
         //поток сохранения шумов(для тестов)
-        save_noice();
+        //save_noice();
 
         //поток обмена данными
         //send_msg();
@@ -129,7 +129,7 @@ public class PlayState extends State {
         play_snd();
 
         //поток сохранения звука
-        //save_snd();
+        save_snd();
 
 
     }
@@ -251,11 +251,15 @@ public class PlayState extends State {
                                     //handShake
                                     about = "Send data to: " + ip_adress + ":" + dynamic_port;
                                     hand_shake_buffer[0] = 15;
+                                    //Send 15 have sound
                                     client.getOutputStream().write(hand_shake_buffer);
+                                    client.getOutputStream().flush();
+
+                                    //read answer 20
                                     client.getInputStream().read(hand_shake_buffer);
 
                                     ByteBuffer buffer2 = ByteBuffer.allocate(2);
-                                    sync_j = 1;
+                                    sync_j = 0;
 
                                     /*
                                     for (int i = 1; i <= 225; i++) {
@@ -273,17 +277,27 @@ public class PlayState extends State {
                                     byte null_byte=0;
                                     boolean send_wrong_block=true;
                                     int sended_blocks=0;
-                                    for (int i=1;i<samples;i++){
+                                    for (int i=0;i<samples;i++){
 
-                                        buffer2.clear();
+                                        //buffer2.clear();
                                         buffer2.putShort(data.get(0)[i]);
+                                        //System.out.println("N: "+i+" s: "+data.get(0)[i]);
 
-                                    //    if (sync_j<size_of_system_buffer/2) {
-                                            system_buffer[sync_j*2+0]=buffer2.get(0);
-                                            system_buffer[sync_j*2+1]=buffer2.get(1);
-                                            buffer2.clear();
+                                        if (sync_j<size_of_system_buffer/2) {
+                                        system_buffer[sync_j*2+0]=buffer2.get(0);
+                                        system_buffer[sync_j*2+1]=buffer2.get(1);
+                                        buffer2.clear();
                                             sync_j++;
-                                    //    }
+                                            if (sync_j>=size_of_system_buffer/2){
+                                                sended_blocks++;
+                                                System.out.println("Sended: "+sended_blocks);
+                                                client.getOutputStream().write(system_buffer);
+
+                                                System.out.println("Wait answer: "+sended_blocks);
+                                                client.getInputStream().read(hand_shake_buffer);
+                                                sync_j=0;
+                                            }
+                                        }
                                      //   else
                                       //  {
 
@@ -305,12 +319,16 @@ public class PlayState extends State {
 
                                           //  Arrays.fill(system_buffer,null_byte);
                                         //}
+
                                     }
-                                   // sended_blocks++;
-                                    //System.out.println("Sended: "+sended_blocks);
+
+                                    System.out.println("Sended: "+sended_blocks);
                                     client.getOutputStream().write(system_buffer);
+
+                                    System.out.println("Wait answer: "+sended_blocks);
                                     client.getInputStream().read(hand_shake_buffer);
-                                    Arrays.fill(system_buffer,null_byte);
+                                    System.out.println("answer: "+hand_shake_buffer[0]);
+                                    //Arrays.fill(system_buffer,null_byte);
 
                                     data.removeIndex(0);
                                     can_send.removeIndex(0);
