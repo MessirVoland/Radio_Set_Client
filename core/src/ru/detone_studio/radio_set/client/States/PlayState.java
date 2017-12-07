@@ -11,12 +11,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.net.Socket;
 import com.badlogic.gdx.net.SocketHints;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import ru.detone_studio.radio_set.client.GameStateManager;
 
@@ -70,12 +72,12 @@ public class PlayState extends State {
     byte hand_shake_buffer[] = new byte[2];
 
     //Буффер отправки
-    int size_of_system_buffer=4000;
+    int size_of_system_buffer=4096*11;
     byte system_buffer[]=new byte[size_of_system_buffer];
 
     //Порт авторизации и ИП
     int dynamic_port = 9000;
-    String ip_adress = "192.168.1.2";
+    String ip_adress = "192.168.0.2";
 
 
     String about = "";
@@ -114,10 +116,10 @@ public class PlayState extends State {
         about = "Wait for input ServerAdress";
 
 
-        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.1.196", "");
+        Gdx.input.getTextInput(listener, "Enter server adress", "192.168.0.2", "");
 
         //поток сохранения шумов(для тестов)
-        //save_noice();
+        save_noice();
 
         //поток обмена данными
         //send_msg();
@@ -127,7 +129,7 @@ public class PlayState extends State {
         play_snd();
 
         //поток сохранения звука
-        save_snd();
+        //save_snd();
 
 
     }
@@ -234,7 +236,8 @@ public class PlayState extends State {
                             } else {
                                 about = "Check aviable: " + ip_adress + ":" + dynamic_port;
 
-                                int buffer_size = 4096 ;
+                                //int buffer_size = 4096 ;
+                                int buffer_size = size_of_system_buffer;
                                 hints.receiveBufferSize = buffer_size;
                                 hints.sendBufferSize = buffer_size;
 
@@ -252,8 +255,9 @@ public class PlayState extends State {
                                     client.getInputStream().read(hand_shake_buffer);
 
                                     ByteBuffer buffer2 = ByteBuffer.allocate(2);
-                                    sync_j = 0;
+                                    sync_j = 1;
 
+                                    /*
                                     for (int i = 1; i <= 225; i++) {
                                         for (int j = 1; j <= 98; j++) {
                                             buffer2.putShort(data.get(0)[sync_j]);
@@ -264,8 +268,53 @@ public class PlayState extends State {
                                         }
                                         client.getOutputStream().write(buffer);
                                     }
+                                    */
+
+                                    byte null_byte=0;
+                                    boolean send_wrong_block=true;
+                                    int sended_blocks=0;
+                                    for (int i=1;i<samples;i++){
+
+                                        buffer2.clear();
+                                        buffer2.putShort(data.get(0)[i]);
+
+                                    //    if (sync_j<size_of_system_buffer/2) {
+                                            system_buffer[sync_j*2+0]=buffer2.get(0);
+                                            system_buffer[sync_j*2+1]=buffer2.get(1);
+                                            buffer2.clear();
+                                            sync_j++;
+                                    //    }
+                                     //   else
+                                      //  {
+
+                                       //     sended_blocks++;
+                                         //   system_buffer[0]=(byte) sended_blocks;
+                                         //   system_buffer[1]=(byte) 12;
+
+                                         //   client.getOutputStream().write(system_buffer);
+
+
+                                         //   client.getInputStream().read(hand_shake_buffer);
+
+
+                                          //  client.getOutputStream().flush();
+                                          //  Thread.sleep(120);
+
+                                         //   System.out.println("Sended: "+sync_j+" bm1: "+system_buffer[0]+" bm2: "+system_buffer[1]+"ans: "+hand_shake_buffer[0]);
+                                          //  sync_j=1;
+
+                                          //  Arrays.fill(system_buffer,null_byte);
+                                        //}
+                                    }
+                                   // sended_blocks++;
+                                    //System.out.println("Sended: "+sended_blocks);
+                                    client.getOutputStream().write(system_buffer);
+                                    client.getInputStream().read(hand_shake_buffer);
+                                    Arrays.fill(system_buffer,null_byte);
+
                                     data.removeIndex(0);
                                     can_send.removeIndex(0);
+                                    System.out.println("END SEND");
                                 }
                             }
                             //------------------------------------------------------------------------------------->
