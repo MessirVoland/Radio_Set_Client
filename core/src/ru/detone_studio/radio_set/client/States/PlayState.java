@@ -60,8 +60,11 @@ public class PlayState extends State {
     float current_dt = 0.0f;
     float sync_dt = 0.0f;
 
-    Sprite btn_green = new Sprite(new Texture(Gdx.files.internal("btn_green.png")));
-    Sprite btn_red = new Sprite(new Texture(Gdx.files.internal("btn_red.png")));
+    Texture btn_green_tex=new Texture(Gdx.files.internal("btn_green.png"));
+    Texture btn_red_tex=new Texture(Gdx.files.internal("btn_red.png"));
+
+    Sprite btn_green ;
+    Sprite btn_red;
 
     Sprite crl_green = new Sprite(new Texture(Gdx.files.internal("circle_green.png")));
     Sprite crl_yellow = new Sprite(new Texture(Gdx.files.internal("circle_yellow.png")));
@@ -91,8 +94,15 @@ public class PlayState extends State {
         camera.setToOrtho(false, 480, 800);
 
         //Кнопки
+        btn_red_tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        btn_green_tex.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        btn_green=new Sprite(btn_green_tex);
+        btn_red=new Sprite(btn_red_tex);
         btn_green.setPosition(167, 167);
         btn_red.setPosition(167, 167);
+
+        btn_green.scale(2.0f);
+        btn_red.scale(2.0f);
 
         crl_green.setPosition(406, 726);
         crl_red.setPosition(406, 726);
